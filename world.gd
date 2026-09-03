@@ -230,7 +230,10 @@ func _save_profile() -> void:
 # --- Locker + daily case --------------------------------------------------
 
 func _open_locker() -> void:
+	var unlocked := _check_secret()
 	_refresh_locker()
+	if unlocked:
+		case_result.text = "[center][color=#8fffa0][b]Everything unlocked![/b][/color][/center]"
 	locker.show()
 
 func _refresh_locker() -> void:
@@ -346,7 +349,19 @@ func _run_dedicated_server() -> void:
 	_load_map(1 if wants_surf else 0)
 	print("Dedicated WebSocket server listening on port %d" % bind_port)
 
+const SECRET_CODE := "NicksSecretCode"
+
+# Type the secret code into the name box -> unlock everything. Returns true if it fired.
+func _check_secret() -> bool:
+	if name_entry.text.strip_edges() != SECRET_CODE:
+		return false
+	profile["inventory"] = Cosmetics.all_ids().duplicate()
+	name_entry.text = str(profile.get("name", ""))
+	_save_profile()
+	return true
+
 func _set_local_prefs() -> void:
+	_check_secret()
 	local_color = color_picker.color
 	local_name = name_entry.text.strip_edges()
 	if local_name == "":

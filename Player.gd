@@ -17,6 +17,7 @@ signal health_changed(health_value)
 @onready var knife_option = $PlayerUI/WeaponMenu/Margin/VBox/KnifeRow/Option
 @onready var name_tag: Label3D = $NameTag
 @onready var cosmetics_root: Node3D = $Cosmetics
+@onready var hit_marker = $PlayerUI/HitMarker
 
 const MAX_HEALTH := 100
 var health := MAX_HEALTH
@@ -143,6 +144,9 @@ var _reload_done := 0.0
 var _next_fire_time := 0.0
 var _fire_queued := false
 var _settle_ticks := 0
+var _inspecting := false
+var _inspect_tween: Tween
+var _hit_tween: Tween
 var _menu_open := false
 var _scoped := false
 var _base_fov := 75.0
@@ -243,6 +247,7 @@ func _unhandled_input(event):
 			KEY_3: _set_slot("knife")
 			KEY_R: _start_reload()
 			KEY_B: _toggle_menu()
+			KEY_F: _inspect_weapon()
 
 	# Click in the game to grab the mouse again (after tabbing away / pressing Esc).
 	if event is InputEventMouseButton and event.pressed \
@@ -503,6 +508,7 @@ func _fire_ray(w: Dictionary, pellets: int) -> void:
 	if pellets > 1:
 		dmg = int(ceil(float(w["damage"]) / float(pellets)))
 	body.receive_damage.rpc_id(body.get_multiplayer_authority(), dmg, multiplayer.get_unique_id())
+	_show_hitmarker()
 
 func _populate_option(opt: OptionButton, slot: String) -> void:
 	if opt == null:
@@ -533,12 +539,47 @@ func _set_current_weapon_id(id: String) -> void:
 func _build_weapon_model() -> void:
 	if weapon_model_root == null:
 		return
+	_inspecting = false
+	if _inspect_tween != null and _inspect_tween.is_valid():
+		_inspect_tween.kill()
+	weapon_model_root.position = Vector3.ZERO
+	weapon_model_root.rotation = Vector3.ZERO
 	for c in weapon_model_root.get_children():
 		c.queue_free()
 	var parts: Array = MODELS.get(current_weapon_id, MODELS["pistol"])
 	for part in parts:
 		weapon_model_root.add_child(_make_part(part))
 	_apply_skin_to_weapon()
+
+# Press F: bring the weapon up and turn it over for a look.
+func _inspect_weapon() -> void:
+	if _inspecting or _menu_open or _scoped or weapon_model_root == null:
+		return
+	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		return
+	_inspecting = true
+	_play_sound("inspect")
+	_inspect_tween = create_tween()
+	_inspect_tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	_inspect_tween.tween_property(weapon_model_root, "rotation_degrees", Vector3(-12, 155, 12), 0.32)
+	_inspect_tween.parallel().tween_property(weapon_model_root, "position", Vector3(-0.12, 0.04, 0.14), 0.32)
+	_inspect_tween.tween_interval(0.9)
+	_inspect_tween.tween_property(weapon_model_root, "rotation_degrees", Vector3.ZERO, 0.3)
+	_inspect_tween.parallel().tween_property(weapon_model_root, "position", Vector3.ZERO, 0.3)
+	_inspect_tween.tween_callback(func(): _inspecting = false)
+
+func _show_hitmarker() -> void:
+	if not is_instance_valid(hit_marker):
+		return
+	if _hit_tween != null and _hit_tween.is_valid():
+		_hit_tween.kill()
+	hit_marker.modulate.a = 1.0
+	hit_marker.visible = true
+	_play_sound("hitmarker")
+	_hit_tween = create_tween()
+	_hit_tween.tween_interval(0.06)
+	_hit_tween.tween_property(hit_marker, "modulate:a", 0.0, 0.22)
+	_hit_tween.tween_callback(func(): hit_marker.visible = false)
 
 # Recolours the current weapon's parts if a skin is equipped (two-tone: body
 # parts -> primary, wood / dark furniture -> secondary; emissive skins glow).

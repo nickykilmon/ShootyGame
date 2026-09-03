@@ -38,6 +38,23 @@ const SKINS := {
 	"vaporwave":   {"name": "Vaporwave",  "rarity": "epic",      "primary": Color(1.0, 0.45, 0.8), "secondary": Color(0.35, 0.85, 0.95), "metallic": 0.35, "roughness": 0.35, "emission": Color(0.35, 0.1, 0.4)},
 	"molten_gold": {"name": "Molten Gold","rarity": "legendary", "primary": Color(1.0, 0.82, 0.3), "secondary": Color(0.8, 0.55, 0.1), "metallic": 1.0, "roughness": 0.12, "emission": Color(0.7, 0.45, 0.05)},
 	"prismatic":   {"name": "Prismatic",  "rarity": "legendary", "primary": Color(0.95, 0.95, 1.0), "secondary": Color(0.8, 0.85, 1.0), "metallic": 0.85, "roughness": 0.08, "emission": Color(0.3, 0.5, 0.9)},
+
+	"candycorn":   {"name": "Candy Corn", "rarity": "common",    "primary": Color(0.98, 0.6, 0.1), "secondary": Color(0.98, 0.9, 0.3), "metallic": 0.2, "roughness": 0.5, "emission": Color(0,0,0)},
+	"ocean":       {"name": "Ocean",      "rarity": "common",    "primary": Color(0.1, 0.5, 0.6), "secondary": Color(0.05, 0.12, 0.25), "metallic": 0.3, "roughness": 0.4, "emission": Color(0,0,0)},
+	"copper":      {"name": "Copper",     "rarity": "common",    "primary": Color(0.72, 0.42, 0.24), "secondary": Color(0.3, 0.18, 0.1), "metallic": 0.9, "roughness": 0.35, "emission": Color(0,0,0)},
+	"bumblebee":   {"name": "Bumblebee",  "rarity": "common",    "primary": Color(0.98, 0.82, 0.1), "secondary": Color(0.05, 0.05, 0.05), "metallic": 0.3, "roughness": 0.5, "emission": Color(0,0,0)},
+	"sakura":      {"name": "Sakura",     "rarity": "common",    "primary": Color(1.0, 0.78, 0.85), "secondary": Color(0.6, 0.35, 0.4), "metallic": 0.2, "roughness": 0.55, "emission": Color(0,0,0)},
+	"royal":       {"name": "Royal",      "rarity": "rare",      "primary": Color(0.12, 0.16, 0.5), "secondary": Color(0.9, 0.72, 0.25), "metallic": 0.7, "roughness": 0.25, "emission": Color(0,0,0)},
+	"amethyst":    {"name": "Amethyst",   "rarity": "rare",      "primary": Color(0.55, 0.3, 0.8), "secondary": Color(0.2, 0.1, 0.32), "metallic": 0.6, "roughness": 0.16, "emission": Color(0,0,0)},
+	"frostbite":   {"name": "Frostbite",  "rarity": "rare",      "primary": Color(0.6, 0.85, 1.0), "secondary": Color(0.2, 0.35, 0.5), "metallic": 0.4, "roughness": 0.2, "emission": Color(0.1, 0.4, 0.7)},
+	"firestarter": {"name": "Firestarter","rarity": "rare",      "primary": Color(0.8, 0.2, 0.05), "secondary": Color(0.25, 0.06, 0.02), "metallic": 0.3, "roughness": 0.5, "emission": Color(0.8, 0.3, 0.05)},
+	"digital":     {"name": "Digital",    "rarity": "rare",      "primary": Color(0.1, 0.12, 0.12), "secondary": Color(0.04, 0.05, 0.05), "metallic": 0.4, "roughness": 0.35, "emission": Color(0.1, 0.75, 0.25)},
+	"neon_noir":   {"name": "Neon Noir",  "rarity": "epic",      "primary": Color(0.05, 0.05, 0.06), "secondary": Color(0.02, 0.02, 0.03), "metallic": 0.5, "roughness": 0.25, "emission": Color(0.95, 0.1, 0.55)},
+	"void":        {"name": "Void",       "rarity": "epic",      "primary": Color(0.02, 0.02, 0.03), "secondary": Color(0.01, 0.01, 0.02), "metallic": 0.6, "roughness": 0.2, "emission": Color(0.25, 0.05, 0.4)},
+	"radioactive": {"name": "Radioactive","rarity": "epic",      "primary": Color(0.7, 0.9, 0.1), "secondary": Color(0.2, 0.28, 0.05), "metallic": 0.3, "roughness": 0.4, "emission": Color(0.55, 0.8, 0.05)},
+	"sunset":      {"name": "Sunset",     "rarity": "epic",      "primary": Color(1.0, 0.5, 0.25), "secondary": Color(0.5, 0.15, 0.4), "metallic": 0.35, "roughness": 0.3, "emission": Color(0.4, 0.12, 0.15)},
+	"dragonfire":  {"name": "Dragonfire", "rarity": "legendary", "primary": Color(0.2, 0.03, 0.03), "secondary": Color(0.08, 0.02, 0.02), "metallic": 0.4, "roughness": 0.4, "emission": Color(1.0, 0.35, 0.05)},
+	"starlight":   {"name": "Starlight",  "rarity": "legendary", "primary": Color(0.06, 0.07, 0.16), "secondary": Color(0.03, 0.03, 0.09), "metallic": 0.7, "roughness": 0.15, "emission": Color(0.6, 0.7, 1.0)},
 }
 
 # ---- character cosmetics ---------------------------------------------------
@@ -149,6 +166,91 @@ const COSMETICS := {
 		{"t": "sphere", "s": Vector3(0.12, 0.1, 0.12), "p": Vector3(0.16, 0.98, 0.4), "c": _ORANGE, "emission": Color(0.9, 0.4, 0.1)},
 		{"t": "sphere", "s": Vector3(0.12, 0.1, 0.12), "p": Vector3(-0.16, 0.98, 0.4), "c": _ORANGE, "emission": Color(0.9, 0.4, 0.1)},
 	]},
+
+	"top_hat": {"name": "Top Hat", "slot": "head", "rarity": "rare", "parts": [
+		{"t": "cyl", "s": Vector3(0.5, 0.04, 0), "p": Vector3(0, 1.94, 0), "c": _BLACK},
+		{"t": "cyl", "s": Vector3(0.3, 0.4, 0), "p": Vector3(0, 2.15, 0), "c": _BLACK},
+		{"t": "cyl", "s": Vector3(0.31, 0.07, 0), "p": Vector3(0, 2.0, 0), "c": _RED},
+	]},
+	"party_hat": {"name": "Party Hat", "slot": "head", "rarity": "common", "parts": [
+		{"t": "cone", "s": Vector3(0.28, 0.55, 0), "p": Vector3(0, 2.2, 0), "c": Color(0.2, 0.7, 1.0)},
+		{"t": "sphere", "s": Vector3(0.12, 0.12, 0.12), "p": Vector3(0, 2.48, 0), "c": _PINK},
+	]},
+	"pirate_hat": {"name": "Pirate Hat", "slot": "head", "rarity": "rare", "parts": [
+		{"t": "box", "s": Vector3(0.75, 0.05, 0.45), "p": Vector3(0, 1.98, 0), "r": Vector3(0, 0, 4), "c": _BLACK},
+		{"t": "sphere", "s": Vector3(0.5, 0.3, 0.4), "p": Vector3(0, 2.02, 0), "c": _BLACK},
+		{"t": "box", "s": Vector3(0.12, 0.12, 0.02), "p": Vector3(0, 2.05, -0.22), "c": _WHITE},
+	]},
+	"viking_helmet": {"name": "Viking Helmet", "slot": "head", "rarity": "epic", "parts": [
+		{"t": "sphere", "s": Vector3(0.6, 0.45, 0.6), "p": Vector3(0, 1.97, 0), "c": _GREY},
+		{"t": "cone", "s": Vector3(0.1, 0.3, 0), "p": Vector3(0.34, 2.05, 0), "r": Vector3(0, 0, -55), "c": _WHITE},
+		{"t": "cone", "s": Vector3(0.1, 0.3, 0), "p": Vector3(-0.34, 2.05, 0), "r": Vector3(0, 0, 55), "c": _WHITE},
+	]},
+	"flower_crown": {"name": "Flower Crown", "slot": "head", "rarity": "rare", "parts": [
+		{"t": "torus", "s": Vector3(0.24, 0.34, 0), "p": Vector3(0, 1.98, 0), "r": Vector3(90, 0, 0), "c": Color(0.3, 0.6, 0.25)},
+		{"t": "sphere", "s": Vector3(0.13, 0.13, 0.13), "p": Vector3(0, 1.99, 0.3), "c": _PINK},
+		{"t": "sphere", "s": Vector3(0.13, 0.13, 0.13), "p": Vector3(0.28, 1.99, 0.08), "c": Color(1, 0.9, 0.3)},
+		{"t": "sphere", "s": Vector3(0.13, 0.13, 0.13), "p": Vector3(-0.28, 1.99, 0.08), "c": Color(0.7, 0.5, 1.0)},
+	]},
+	"propeller_cap": {"name": "Propeller Cap", "slot": "head", "rarity": "epic", "parts": [
+		{"t": "sphere", "s": Vector3(0.5, 0.3, 0.5), "p": Vector3(0, 1.95, 0), "c": Color(0.9, 0.2, 0.2)},
+		{"t": "cyl", "s": Vector3(0.03, 0.12, 0), "p": Vector3(0, 2.14, 0), "c": _GREY},
+		{"t": "box", "s": Vector3(0.5, 0.03, 0.08), "p": Vector3(0, 2.2, 0), "c": Color(1, 0.9, 0.2)},
+	]},
+	"space_helmet": {"name": "Space Helmet", "slot": "head", "rarity": "legendary", "parts": [
+		{"t": "sphere", "s": Vector3(0.78, 0.8, 0.78), "p": Vector3(0, 1.82, 0), "c": Color(0.7, 0.85, 1.0), "alpha": 0.28},
+		{"t": "torus", "s": Vector3(0.06, 0.4, 0), "p": Vector3(0, 1.55, 0), "r": Vector3(90, 0, 0), "c": _WHITE},
+	]},
+	"ushanka": {"name": "Ushanka", "slot": "head", "rarity": "common", "parts": [
+		{"t": "sphere", "s": Vector3(0.66, 0.42, 0.6), "p": Vector3(0, 1.95, 0), "c": Color(0.35, 0.25, 0.15)},
+		{"t": "box", "s": Vector3(0.22, 0.3, 0.12), "p": Vector3(0.32, 1.85, 0), "c": Color(0.3, 0.2, 0.12)},
+		{"t": "box", "s": Vector3(0.22, 0.3, 0.12), "p": Vector3(-0.32, 1.85, 0), "c": Color(0.3, 0.2, 0.12)},
+	]},
+	"eyepatch": {"name": "Eyepatch", "slot": "face", "rarity": "common", "parts": [
+		{"t": "box", "s": Vector3(0.18, 0.18, 0.04), "p": Vector3(0.13, 1.82, -0.47), "c": _BLACK},
+	]},
+	"clown_nose": {"name": "Clown Nose", "slot": "face", "rarity": "rare", "parts": [
+		{"t": "sphere", "s": Vector3(0.14, 0.14, 0.14), "p": Vector3(0, 1.74, -0.48), "c": Color(1, 0.15, 0.15)},
+	]},
+	"three_d_glasses": {"name": "3D Glasses", "slot": "face", "rarity": "common", "parts": [
+		{"t": "box", "s": Vector3(0.24, 0.13, 0.04), "p": Vector3(0.14, 1.8, -0.46), "c": Color(1, 0.1, 0.1), "alpha": 0.55},
+		{"t": "box", "s": Vector3(0.24, 0.13, 0.04), "p": Vector3(-0.14, 1.8, -0.46), "c": Color(0.1, 0.4, 1.0), "alpha": 0.55},
+	]},
+	"afro": {"name": "Afro", "slot": "hair", "rarity": "rare", "parts": [
+		{"t": "sphere", "s": Vector3(0.7, 0.6, 0.7), "p": Vector3(0, 2.0, 0), "c": Color(0.15, 0.1, 0.06)},
+	]},
+	"anime_spikes": {"name": "Anime Spikes", "slot": "hair", "rarity": "epic", "parts": [
+		{"t": "prism", "s": Vector3(0.1, 0.35, 0.1), "p": Vector3(0, 2.1, 0.1), "r": Vector3(-20, 0, 0), "c": Color(0.15, 0.35, 0.9)},
+		{"t": "prism", "s": Vector3(0.1, 0.35, 0.1), "p": Vector3(0.16, 2.08, 0), "r": Vector3(0, 0, -20), "c": Color(0.15, 0.35, 0.9)},
+		{"t": "prism", "s": Vector3(0.1, 0.35, 0.1), "p": Vector3(-0.16, 2.08, 0), "r": Vector3(0, 0, 20), "c": Color(0.15, 0.35, 0.9)},
+		{"t": "prism", "s": Vector3(0.1, 0.35, 0.1), "p": Vector3(0, 2.08, -0.16), "r": Vector3(20, 0, 0), "c": Color(0.15, 0.35, 0.9)},
+	]},
+	"blonde_locks": {"name": "Blonde Locks", "slot": "hair", "rarity": "rare", "parts": [
+		{"t": "sphere", "s": Vector3(0.5, 0.25, 0.5), "p": Vector3(0, 2.0, 0), "c": Color(0.95, 0.82, 0.4)},
+		{"t": "box", "s": Vector3(0.5, 0.55, 0.12), "p": Vector3(0, 1.7, 0.28), "c": Color(0.95, 0.82, 0.4)},
+		{"t": "box", "s": Vector3(0.12, 0.55, 0.5), "p": Vector3(0.28, 1.7, 0), "c": Color(0.95, 0.82, 0.4)},
+		{"t": "box", "s": Vector3(0.12, 0.55, 0.5), "p": Vector3(-0.28, 1.7, 0), "c": Color(0.95, 0.82, 0.4)},
+	]},
+	"cape": {"name": "Cape", "slot": "back", "rarity": "epic", "parts": [
+		{"t": "box", "s": Vector3(0.7, 1.1, 0.06), "p": Vector3(0, 1.05, 0.36), "r": Vector3(6, 0, 0), "c": Color(0.6, 0.05, 0.1)},
+	]},
+	"demon_wings": {"name": "Demon Wings", "slot": "back", "rarity": "legendary", "parts": [
+		{"t": "prism", "s": Vector3(0.06, 0.6, 0.6), "p": Vector3(0.34, 1.25, 0.3), "r": Vector3(0, -35, 25), "c": Color(0.15, 0.03, 0.05)},
+		{"t": "prism", "s": Vector3(0.06, 0.6, 0.6), "p": Vector3(-0.34, 1.25, 0.3), "r": Vector3(0, 35, -25), "c": Color(0.15, 0.03, 0.05)},
+	]},
+	"turtle_shell": {"name": "Turtle Shell", "slot": "back", "rarity": "rare", "parts": [
+		{"t": "sphere", "s": Vector3(0.6, 0.4, 0.5), "p": Vector3(0, 1.15, 0.4), "c": Color(0.2, 0.45, 0.2)},
+		{"t": "sphere", "s": Vector3(0.55, 0.36, 0.45), "p": Vector3(0, 1.16, 0.44), "c": Color(0.5, 0.35, 0.15)},
+	]},
+	"balloon": {"name": "Balloon", "slot": "back", "rarity": "common", "parts": [
+		{"t": "cyl", "s": Vector3(0.01, 0.8, 0), "p": Vector3(0, 1.6, 0.4), "c": _GREY},
+		{"t": "sphere", "s": Vector3(0.35, 0.42, 0.35), "p": Vector3(0, 2.1, 0.4), "c": Color(1, 0.3, 0.3)},
+	]},
+	"sword_back": {"name": "Sword on Back", "slot": "back", "rarity": "rare", "parts": [
+		{"t": "box", "s": Vector3(0.06, 0.9, 0.02), "p": Vector3(0.05, 1.3, 0.4), "r": Vector3(0, 0, 20), "c": _GREY},
+		{"t": "box", "s": Vector3(0.24, 0.06, 0.06), "p": Vector3(-0.1, 0.9, 0.4), "r": Vector3(0, 0, 20), "c": _BROWN},
+		{"t": "box", "s": Vector3(0.06, 0.16, 0.06), "p": Vector3(-0.16, 0.82, 0.4), "r": Vector3(0, 0, 20), "c": _BROWN},
+	]},
 }
 
 # ---- helpers --------------------------------------------------------------
@@ -206,7 +308,12 @@ static func make_part(part: Dictionary) -> MeshInstance3D:
 			mesh = BoxMesh.new()
 			mesh.size = part["s"]
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = part.get("c", Color(0.8, 0.8, 0.8))
+	var col: Color = part.get("c", Color(0.8, 0.8, 0.8))
+	var a := float(part.get("alpha", 1.0))
+	if a < 1.0:
+		col.a = a
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = col
 	mat.metallic = part.get("metallic", 0.1)
 	mat.roughness = part.get("roughness", 0.7)
 	var em = part.get("emission", Color(0, 0, 0))
