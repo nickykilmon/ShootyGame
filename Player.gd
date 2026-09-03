@@ -136,6 +136,7 @@ var _reloading := false
 var _reload_done := 0.0
 var _next_fire_time := 0.0
 var _fire_queued := false
+var _settle_ticks := 0
 var _menu_open := false
 var _scoped := false
 var _base_fov := 75.0
@@ -253,6 +254,13 @@ func _physics_process(delta):
 	if not is_multiplayer_authority():
 		return
 
+	# Just respawned: if we're wedged in geometry, shove out of it for a few ticks.
+	if _settle_ticks > 0:
+		_settle_ticks -= 1
+		if is_on_wall() and not is_on_floor():
+			global_position += get_wall_normal() * 0.35
+			velocity = Vector3.ZERO
+
 	if _reloading and Time.get_ticks_msec() / 1000.0 >= _reload_done:
 		_reloading = false
 		_ammo[current_weapon_id] = int(_current_weapon()["mag"])
@@ -275,7 +283,7 @@ func _physics_process(delta):
 			_jump_sfx.play()
 
 	var input_dir := Vector2.ZERO
-	if not _menu_open:
+	if not _menu_open and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		input_dir = Input.get_vector("left", "right", "up", "down")
 	var wishdir := transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)
 	wishdir.y = 0.0
@@ -476,7 +484,7 @@ func _fire_ray(w: Dictionary, pellets: int) -> void:
 	var dmg := int(w["damage"])
 	if pellets > 1:
 		dmg = int(ceil(float(w["damage"]) / float(pellets)))
-	body.receive_damage.rpc_id(body.get_multiplayer_authority(), dmg)
+	body.receive_damage.rpc_id(body.get_multiplayer_authority(), dmg, multiplayer.get_unique_id())
 
 func _populate_option(opt: OptionButton, slot: String) -> void:
 	if opt == null:
@@ -598,16 +606,21 @@ func play_shoot_effects(sfx: String = "", is_melee: bool = false):
 		_play_sound(sfx)
 
 @rpc("any_peer", "reliable")
-func receive_damage(amount: int = 1):
+func receive_damage(amount: int = 1, attacker_id: int = 0):
 	health -= amount
 	if health <= 0:
 		health = MAX_HEALTH
 		velocity = Vector3.ZERO
 		position = _fresh_spawn()
+		_settle_ticks = 12
 		_ammo.clear()
 		_reloading = false
 		_set_scoped(false)
 		_update_weapon_label()
+		# Tell the server who killed us (for the scoreboard + kill feed).
+		var w = get_parent()
+		if w != null and w.has_method("report_death"):
+			w.report_death.rpc_id(1, attacker_id)
 	health_changed.emit(health)
 
 func _fresh_spawn() -> Vector3:

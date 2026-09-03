@@ -9,6 +9,9 @@ extends Node
 @onready var map_select = $CanvasLayer/MainMenu/MarginContainer/VBoxContainer/MapSelect
 @onready var color_picker = $CanvasLayer/MainMenu/MarginContainer/VBoxContainer/ColorPicker
 @onready var map_root = $Map
+@onready var chat_log: RichTextLabel = $CanvasLayer/HUD/ChatLog
+@onready var chat_input: LineEdit = $CanvasLayer/HUD/ChatInput
+@onready var lb_rows = $CanvasLayer/HUD/Leaderboard/Margin/Rows
 
 
 const Player = preload("res://player.tscn")
@@ -31,10 +34,30 @@ var local_color := Color(1, 1, 1)
 var local_name := "Player"
 var surf_selected := false
 
+# Live match scores, kept on the server: { peer_id : {"k": kills, "d": deaths} }
+var scores := {}
+var _my_last_kills := 0
+var _my_last_deaths := 0
+var _chat_lines := []
+
+# Per-player profile that survives leaving/returning (web: user:// -> IndexedDB).
+# Foundation for daily cases / skins later.
+const PROFILE_PATH := "user://profile.json"
+var profile := {"name": "", "lifetime_kills": 0, "lifetime_deaths": 0, "last_case": 0, "inventory": []}
+
 func _ready():
 	if _is_dedicated_server():
 		_run_dedicated_server()
-	elif OS.has_feature("web"):
+		return
+
+	_load_profile()
+	if profile.get("name", "") != "":
+		name_entry.text = str(profile["name"])
+	chat_input.hide()
+	chat_input.text_submitted.connect(_on_chat_submitted)
+	_render_leaderboard([])
+
+	if OS.has_feature("web"):
 		# Web clients can only join the shared server - hide the host-only bits.
 		map_select.hide()
 		code_entry.hide()
@@ -43,9 +66,134 @@ func _ready():
 			host_btn.hide()
 
 func _unhandled_input(_event):
-	# Esc is handled by the player now (releases the mouse). On desktop you can
-	# still quit with the window's close button / Alt+F4.
 	pass
+
+func _input(event):
+	if not hud.visible:
+		return
+	if chat_input.visible:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+			_close_chat()
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_T:
+		chat_input.show()
+		chat_input.grab_focus()
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		get_viewport().set_input_as_handled()
+
+func _on_chat_submitted(text: String) -> void:
+	text = text.strip_edges()
+	if text != "":
+		net_say.rpc_id(1, text)
+	_close_chat()
+
+func _close_chat() -> void:
+	chat_input.text = ""
+	chat_input.hide()
+	chat_input.release_focus()
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+# --- Chat + kill feed --------------------------------------------------------
+
+@rpc("any_peer", "reliable")
+func net_say(text: String) -> void:
+	if not multiplayer.is_server():
+		return
+	text = text.strip_edges().replace("[", "(").replace("]", ")")
+	if text == "" or text.length() > 120:
+		return
+	var sender := multiplayer.get_remote_sender_id()
+	if sender == 0:
+		sender = multiplayer.get_unique_id()
+	push_line.rpc("[color=#e8e8e8]%s:[/color] %s" % [_name_for(sender), text])
+
+@rpc("authority", "call_local", "reliable")
+func push_line(bb: String) -> void:
+	_chat_lines.append(bb)
+	if _chat_lines.size() > 9:
+		_chat_lines = _chat_lines.slice(_chat_lines.size() - 9)
+	if chat_log:
+		chat_log.text = "\n".join(PackedStringArray(_chat_lines))
+
+@rpc("any_peer", "reliable")
+func report_death(killer_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var victim := multiplayer.get_remote_sender_id()
+	if victim == 0:
+		victim = multiplayer.get_unique_id()
+	_ensure_score(victim)
+	scores[victim]["d"] += 1
+	if killer_id != 0 and killer_id != victim:
+		_ensure_score(killer_id)
+		scores[killer_id]["k"] += 1
+		push_line.rpc("[color=#ff7a7a]%s[/color]  killed  [color=#8fbcff]%s[/color]" % [_name_for(killer_id), _name_for(victim)])
+	else:
+		push_line.rpc("[color=#999999]%s died[/color]" % _name_for(victim))
+	sync_scores.rpc(_scores_payload())
+
+@rpc("authority", "call_local", "reliable")
+func sync_scores(rows: Array) -> void:
+	_render_leaderboard(rows)
+	var me := multiplayer.get_unique_id()
+	for r in rows:
+		if r.size() >= 4 and int(r[3]) == me:
+			var k := int(r[1])
+			var d := int(r[2])
+			if k > _my_last_kills:
+				profile["lifetime_kills"] = int(profile.get("lifetime_kills", 0)) + (k - _my_last_kills)
+			if d > _my_last_deaths:
+				profile["lifetime_deaths"] = int(profile.get("lifetime_deaths", 0)) + (d - _my_last_deaths)
+			_my_last_kills = k
+			_my_last_deaths = d
+			_save_profile()
+
+func _ensure_score(id: int) -> void:
+	if id != 0 and not scores.has(id):
+		scores[id] = {"k": 0, "d": 0}
+
+func _name_for(id: int) -> String:
+	var p = get_node_or_null(str(id))
+	if p != null and "player_name" in p and str(p.player_name) != "":
+		return str(p.player_name)
+	return "Player " + str(id)
+
+func _scores_payload() -> Array:
+	var rows := []
+	for id in scores:
+		rows.append([_name_for(id), scores[id]["k"], scores[id]["d"], id])
+	rows.sort_custom(func(a, b): return int(a[1]) > int(b[1]))
+	return rows
+
+func _render_leaderboard(rows: Array) -> void:
+	if lb_rows == null:
+		return
+	for c in lb_rows.get_children():
+		if c.name != "Title":
+			c.queue_free()
+	for r in rows:
+		var l := Label.new()
+		l.text = "%s   %d / %d" % [str(r[0]), int(r[1]), int(r[2])]
+		lb_rows.add_child(l)
+
+# --- Profile persistence ---------------------------------------------------
+
+func _load_profile() -> void:
+	if not FileAccess.file_exists(PROFILE_PATH):
+		return
+	var f := FileAccess.open(PROFILE_PATH, FileAccess.READ)
+	if f == null:
+		return
+	var d = JSON.parse_string(f.get_as_text())
+	if typeof(d) == TYPE_DICTIONARY:
+		for k in d:
+			profile[k] = d[k]
+
+func _save_profile() -> void:
+	var f := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(profile))
 
 func _is_dedicated_server() -> bool:
 	return OS.has_feature("dedicated_server") \
@@ -82,6 +230,8 @@ func _set_local_prefs() -> void:
 	local_name = name_entry.text.strip_edges()
 	if local_name == "":
 		local_name = "Player%d" % (randi() % 1000)
+	profile["name"] = local_name
+	_save_profile()
 
 func _on_host_button_pressed():
 	if OS.has_feature("web"):
@@ -154,11 +304,22 @@ func add_player(peer_id):
 	add_child(player)
 	if player.is_multiplayer_authority():
 		player.health_changed.connect(update_health_bar)
+	if multiplayer.is_server():
+		_ensure_score(int(peer_id))
+		# give the name a moment to replicate, then broadcast the board
+		get_tree().create_timer(0.5).timeout.connect(func():
+			if scores.has(int(peer_id)):
+				sync_scores.rpc(_scores_payload()))
 
 func remove_player(peer_id):
 	var player = get_node_or_null(str(peer_id))
 	if player:
+		if multiplayer.is_server():
+			push_line.rpc("[color=#999999]%s left[/color]" % _name_for(int(peer_id)))
 		player.queue_free()
+	if multiplayer.is_server():
+		scores.erase(int(peer_id))
+		sync_scores.rpc(_scores_payload())
 
 # Instances the selected map under $Map. Only the host calls this; the
 # MapSpawner then recreates the same scene on every client (including late joiners).
@@ -191,10 +352,12 @@ func get_spawn_point() -> Vector3:
 
 	markers.shuffle()
 	var players = get_tree().get_nodes_in_group("players")
-	var best = markers[0]
+	var best = null
 	var best_score := -1.0
 	for m in markers:
 		var mp: Vector3 = m.global_position
+		if not _is_clear(mp):
+			continue   # a pillar / wall is here - skip it
 		var nearest := 1.0e9
 		for p in players:
 			nearest = minf(nearest, mp.distance_to(p.global_position))
@@ -203,8 +366,27 @@ func get_spawn_point() -> Vector3:
 		if nearest > best_score:
 			best_score = nearest
 			best = m
-	var bp: Vector3 = best.global_position
+	var chosen = best if best != null else markers[0]
+	# spawn a bit above the marker so a slight overlap drops you out instead of trapping you
+	var bp: Vector3 = chosen.global_position + Vector3.UP * 1.5
 	return bp + Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
+
+# True if a player-sized capsule at pos doesn't overlap any solid geometry.
+func _is_clear(pos: Vector3) -> bool:
+	var vp := get_viewport()
+	if vp == null or vp.find_world_3d() == null:
+		return true
+	var space := vp.find_world_3d().direct_space_state
+	if space == null:
+		return true
+	var q := PhysicsShapeQueryParameters3D.new()
+	var sh := CapsuleShape3D.new()
+	sh.radius = 0.5
+	sh.height = 1.8
+	q.shape = sh
+	q.transform = Transform3D(Basis(), pos + Vector3.UP * 1.1)
+	q.collision_mask = 1
+	return space.intersect_shape(q, 1).is_empty()
 
 func update_health_bar(health_value):
 	health_bar.value = health_value

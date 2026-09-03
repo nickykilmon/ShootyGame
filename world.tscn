@@ -152,6 +152,57 @@ max_value = 100.0
 value = 100.0
 show_percentage = false
 
+[node name="ChatLog" type="RichTextLabel" parent="CanvasLayer/HUD"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -300.0
+offset_right = 484.0
+offset_bottom = -86.0
+mouse_filter = 2
+bbcode_enabled = true
+scroll_active = false
+fit_content = true
+
+[node name="ChatInput" type="LineEdit" parent="CanvasLayer/HUD"]
+visible = false
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -82.0
+offset_right = 484.0
+offset_bottom = -54.0
+placeholder_text = "Say something... (Enter to send, Esc to cancel)"
+max_length = 120
+
+[node name="Leaderboard" type="PanelContainer" parent="CanvasLayer/HUD"]
+layout_mode = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 48.0
+offset_right = -16.0
+offset_bottom = 60.0
+grow_horizontal = 0
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayer/HUD/Leaderboard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Rows" type="VBoxContainer" parent="CanvasLayer/HUD/Leaderboard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="CanvasLayer/HUD/Leaderboard/Margin/Rows"]
+layout_mode = 2
+text = "SCOREBOARD"
+horizontal_alignment = 1
+
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("res://player.tscn")
 spawn_path = NodePath("..")
