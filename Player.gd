@@ -16,6 +16,7 @@ signal health_changed(health_value)
 @onready var secondary_option = $PlayerUI/WeaponMenu/Margin/VBox/SecondaryRow/Option
 @onready var knife_option = $PlayerUI/WeaponMenu/Margin/VBox/KnifeRow/Option
 @onready var name_tag: Label3D = $NameTag
+@onready var cosmetics_root: Node3D = $Cosmetics
 
 const MAX_HEALTH := 100
 var health := MAX_HEALTH
@@ -27,6 +28,11 @@ var player_color := Color(1, 1, 1) : set = _set_player_color
 var player_name := "Player" : set = _set_player_name
 var surf_mode := false : set = _set_surf_mode
 var current_weapon_id := "pistol" : set = _set_current_weapon_id
+var skin_id := "" : set = _set_skin_id
+var cos_head := "" : set = _set_cos_head
+var cos_face := "" : set = _set_cos_face
+var cos_hair := "" : set = _set_cos_hair
+var cos_back := "" : set = _set_cos_back
 
 # Networked pose. The owner writes these every physics frame from its real
 # transform; everyone else smoothly interpolates toward them (the synchronizer
@@ -173,6 +179,7 @@ func _ready():
 	net_yaw = rotation.y
 	_apply_color()
 	_build_weapon_model()
+	_build_cosmetics()
 	_set_surf_mode(surf_mode)
 	_set_player_name(player_name)
 
@@ -181,9 +188,11 @@ func _ready():
 			player_ui.queue_free()
 		return
 
-	# You don't see your own floating name tag.
+	# You don't see your own floating name tag or head cosmetics in first person.
 	if name_tag:
 		name_tag.hide()
+	if cosmetics_root:
+		cosmetics_root.hide()
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	camera.current = true
@@ -197,6 +206,15 @@ func _ready():
 		var nm = w.get("local_name")
 		if nm != null and str(nm) != "":
 			player_name = nm
+		var sk = w.get("local_skin")
+		if sk != null:
+			skin_id = str(sk)
+		var cos = w.get("local_cos")
+		if cos != null and cos is Dictionary:
+			cos_head = str(cos.get("head", ""))
+			cos_face = str(cos.get("face", ""))
+			cos_hair = str(cos.get("hair", ""))
+			cos_back = str(cos.get("back", ""))
 
 	_jump_sfx = AudioStreamPlayer.new()
 	_jump_sfx.stream = load("res://jump_debug.wav")
@@ -520,6 +538,60 @@ func _build_weapon_model() -> void:
 	var parts: Array = MODELS.get(current_weapon_id, MODELS["pistol"])
 	for part in parts:
 		weapon_model_root.add_child(_make_part(part))
+	_apply_skin_to_weapon()
+
+# Recolours the current weapon's parts if a skin is equipped (two-tone: body
+# parts -> primary, wood / dark furniture -> secondary; emissive skins glow).
+func _apply_skin_to_weapon() -> void:
+	if weapon_model_root == null or skin_id == "" or not Cosmetics.SKINS.has(skin_id):
+		return
+	var s: Dictionary = Cosmetics.SKINS[skin_id]
+	for mi in weapon_model_root.get_children():
+		if not (mi is MeshInstance3D):
+			continue
+		var base := Color(0.5, 0.5, 0.5)
+		if mi.mesh != null and mi.mesh.material is StandardMaterial3D:
+			base = mi.mesh.material.albedo_color
+		var is_secondary := (base.r > base.b * 1.4 and base.r > 0.25) or base.v < 0.12
+		var m := StandardMaterial3D.new()
+		m.albedo_color = s["secondary"] if is_secondary else s["primary"]
+		m.metallic = s["metallic"]
+		m.roughness = s["roughness"]
+		if s["emission"] != Color(0, 0, 0):
+			m.emission_enabled = true
+			m.emission = s["emission"]
+			m.emission_energy_multiplier = 1.4
+		mi.material_override = m
+
+func _build_cosmetics() -> void:
+	if cosmetics_root == null:
+		return
+	for c in cosmetics_root.get_children():
+		c.queue_free()
+	for id in [cos_head, cos_face, cos_hair, cos_back]:
+		if id != "" and Cosmetics.COSMETICS.has(id):
+			for part in Cosmetics.COSMETICS[id]["parts"]:
+				cosmetics_root.add_child(Cosmetics.make_part(part))
+
+func _set_skin_id(v: String) -> void:
+	skin_id = v
+	_build_weapon_model()
+
+func _set_cos_head(v: String) -> void:
+	cos_head = v
+	_build_cosmetics()
+
+func _set_cos_face(v: String) -> void:
+	cos_face = v
+	_build_cosmetics()
+
+func _set_cos_hair(v: String) -> void:
+	cos_hair = v
+	_build_cosmetics()
+
+func _set_cos_back(v: String) -> void:
+	cos_back = v
+	_build_cosmetics()
 
 func _make_part(part: Dictionary) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()

@@ -12,6 +12,16 @@ extends Node
 @onready var chat_log: RichTextLabel = $CanvasLayer/HUD/ChatLog
 @onready var chat_input: LineEdit = $CanvasLayer/HUD/ChatInput
 @onready var lb_rows = $CanvasLayer/HUD/Leaderboard/Margin/Rows
+@onready var locker = $CanvasLayer/Locker
+@onready var locker_btn = $CanvasLayer/MainMenu/MarginContainer/VBoxContainer/LockerButton
+@onready var skin_opt: OptionButton = $CanvasLayer/Locker/M/V/SkinRow/Opt
+@onready var head_opt: OptionButton = $CanvasLayer/Locker/M/V/HeadRow/Opt
+@onready var face_opt: OptionButton = $CanvasLayer/Locker/M/V/FaceRow/Opt
+@onready var hair_opt: OptionButton = $CanvasLayer/Locker/M/V/HairRow/Opt
+@onready var back_opt: OptionButton = $CanvasLayer/Locker/M/V/BackRow/Opt
+@onready var case_btn: Button = $CanvasLayer/Locker/M/V/CaseButton
+@onready var case_result: RichTextLabel = $CanvasLayer/Locker/M/V/Result
+@onready var locker_close: Button = $CanvasLayer/Locker/M/V/CloseButton
 
 
 const Player = preload("res://player.tscn")
@@ -32,7 +42,11 @@ var enet_peer = ENetMultiplayerPeer.new()
 # local_name off its parent (this node) when it spawns.
 var local_color := Color(1, 1, 1)
 var local_name := "Player"
+var local_skin := ""
+var local_cos := {"head": "", "face": "", "hair": "", "back": ""}
 var surf_selected := false
+
+const CASE_COOLDOWN := 72000   # 20 hours (seconds)
 
 # Live match scores, kept on the server: { peer_id : {"k": kills, "d": deaths} }
 var scores := {}
@@ -43,7 +57,15 @@ var _chat_lines := []
 # Per-player profile that survives leaving/returning (web: user:// -> IndexedDB).
 # Foundation for daily cases / skins later.
 const PROFILE_PATH := "user://profile.json"
-var profile := {"name": "", "lifetime_kills": 0, "lifetime_deaths": 0, "last_case": 0, "inventory": []}
+var profile := {
+	"name": "",
+	"lifetime_kills": 0,
+	"lifetime_deaths": 0,
+	"last_case": 0,
+	"inventory": [],
+	"equipped_skin": "",
+	"equipped_cos": {"head": "", "face": "", "hair": "", "back": ""},
+}
 
 func _ready():
 	if _is_dedicated_server():
@@ -56,6 +78,16 @@ func _ready():
 	chat_input.hide()
 	chat_input.text_submitted.connect(_on_chat_submitted)
 	_render_leaderboard([])
+
+	locker.hide()
+	locker_btn.pressed.connect(_open_locker)
+	locker_close.pressed.connect(func(): locker.hide())
+	case_btn.pressed.connect(_on_case_pressed)
+	skin_opt.item_selected.connect(func(i): _equip_from(skin_opt, i, "skin", ""))
+	head_opt.item_selected.connect(func(i): _equip_from(head_opt, i, "cos", "head"))
+	face_opt.item_selected.connect(func(i): _equip_from(face_opt, i, "cos", "face"))
+	hair_opt.item_selected.connect(func(i): _equip_from(hair_opt, i, "cos", "hair"))
+	back_opt.item_selected.connect(func(i): _equip_from(back_opt, i, "cos", "back"))
 
 	if OS.has_feature("web"):
 		# Web clients can only join the shared server - hide the host-only bits.
@@ -195,6 +227,95 @@ func _save_profile() -> void:
 	if f != null:
 		f.store_string(JSON.stringify(profile))
 
+# --- Locker + daily case --------------------------------------------------
+
+func _open_locker() -> void:
+	_refresh_locker()
+	locker.show()
+
+func _refresh_locker() -> void:
+	var inv: Array = profile.get("inventory", [])
+	_fill_opt(skin_opt, "Default", _owned_skins(inv), str(profile.get("equipped_skin", "")))
+	var ec = profile.get("equipped_cos", {})
+	_fill_opt(head_opt, "None", _owned_cos(inv, "head"), str(ec.get("head", "")))
+	_fill_opt(face_opt, "None", _owned_cos(inv, "face"), str(ec.get("face", "")))
+	_fill_opt(hair_opt, "None", _owned_cos(inv, "hair"), str(ec.get("hair", "")))
+	_fill_opt(back_opt, "None", _owned_cos(inv, "back"), str(ec.get("back", "")))
+	if _can_open_case():
+		case_btn.disabled = false
+		case_btn.text = "Open Daily Case  (ready!)"
+	else:
+		case_btn.disabled = true
+		var left := CASE_COOLDOWN - int(Time.get_unix_time_from_system() - int(profile.get("last_case", 0)))
+		case_btn.text = "Next case in %dh %dm" % [left / 3600, (left % 3600) / 60]
+
+func _owned_skins(inv: Array) -> Array:
+	var out := []
+	for id in inv:
+		if Cosmetics.SKINS.has(id):
+			out.append(id)
+	return out
+
+func _owned_cos(inv: Array, slot: String) -> Array:
+	var out := []
+	for id in inv:
+		if Cosmetics.COSMETICS.has(id) and Cosmetics.COSMETICS[id]["slot"] == slot:
+			out.append(id)
+	return out
+
+func _fill_opt(opt: OptionButton, none_text: String, ids: Array, equipped: String) -> void:
+	opt.clear()
+	opt.add_item(none_text)
+	opt.set_item_metadata(0, "")
+	for id in ids:
+		opt.add_item(Cosmetics.item(id).get("name", id))
+		opt.set_item_metadata(opt.item_count - 1, id)
+		if id == equipped:
+			opt.select(opt.item_count - 1)
+
+func _equip_from(opt: OptionButton, idx: int, kind: String, slot: String) -> void:
+	var id: String = str(opt.get_item_metadata(idx))
+	if kind == "skin":
+		profile["equipped_skin"] = id
+	else:
+		var ec: Dictionary = profile.get("equipped_cos", {})
+		ec[slot] = id
+		profile["equipped_cos"] = ec
+	_save_profile()
+
+func _can_open_case() -> bool:
+	return Time.get_unix_time_from_system() - float(profile.get("last_case", 0)) >= CASE_COOLDOWN
+
+func _on_case_pressed() -> void:
+	if not _can_open_case():
+		return
+	profile["last_case"] = int(Time.get_unix_time_from_system())
+	var rarity := Cosmetics.roll_rarity(randf())
+	var pool: Array = Cosmetics.ids_of_rarity(rarity)
+	if pool.is_empty():
+		pool = Cosmetics.ids_of_rarity("common")
+	var inv: Array = profile.get("inventory", [])
+	var got: String = pool[randi() % pool.size()]
+	for _i in 4:                       # try to land on something you don't own yet
+		var cand: String = pool[randi() % pool.size()]
+		got = cand
+		if not inv.has(cand):
+			break
+	var dupe := inv.has(got)
+	if not dupe:
+		inv.append(got)
+	profile["inventory"] = inv
+	_save_profile()
+	var it := Cosmetics.item(got)
+	var col: Color = Cosmetics.RARITY_COLOR.get(it.get("rarity", "common"), Color.WHITE)
+	case_result.text = "[center][color=#%s][b]%s[/b]  -  %s[/color]%s[/center]" % [
+		col.to_html(false),
+		str(it.get("rarity", "")).to_upper(),
+		str(it.get("name", got)),
+		"\n[color=#888888](duplicate)[/color]" if dupe else "",
+	]
+	_refresh_locker()
+
 func _is_dedicated_server() -> bool:
 	return OS.has_feature("dedicated_server") \
 		or OS.get_cmdline_args().has("--server") \
@@ -230,6 +351,14 @@ func _set_local_prefs() -> void:
 	local_name = name_entry.text.strip_edges()
 	if local_name == "":
 		local_name = "Player%d" % (randi() % 1000)
+	local_skin = str(profile.get("equipped_skin", ""))
+	var ec = profile.get("equipped_cos", {})
+	local_cos = {
+		"head": str(ec.get("head", "")),
+		"face": str(ec.get("face", "")),
+		"hair": str(ec.get("hair", "")),
+		"back": str(ec.get("back", "")),
+	}
 	profile["name"] = local_name
 	_save_profile()
 

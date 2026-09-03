@@ -155,6 +155,21 @@ properties/9/sync = true
 properties/10/path = NodePath(".:surf_mode")
 properties/10/spawn = true
 properties/10/sync = false
+properties/11/path = NodePath(".:skin_id")
+properties/11/spawn = true
+properties/11/sync = true
+properties/12/path = NodePath(".:cos_head")
+properties/12/spawn = true
+properties/12/sync = true
+properties/13/path = NodePath(".:cos_face")
+properties/13/spawn = true
+properties/13/sync = true
+properties/14/path = NodePath(".:cos_hair")
+properties/14/spawn = true
+properties/14/sync = true
+properties/15/path = NodePath(".:cos_back")
+properties/15/spawn = true
+properties/15/sync = true
 
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 2
@@ -171,6 +186,8 @@ billboard = 1
 text = "Player"
 outline_size = 14
 outline_modulate = Color(0, 0, 0, 1)
+
+[node name="Cosmetics" type="Node3D" parent="."]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

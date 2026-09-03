@@ -45,9 +45,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -190.0
-offset_top = -215.0
+offset_top = -245.0
 offset_right = 190.0
-offset_bottom = 215.0
+offset_bottom = 245.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -90,6 +90,10 @@ tooltip_text = "Your character colour"
 text = "Character Colour"
 color = Color(0.3, 0.6, 1, 1)
 
+[node name="LockerButton" type="Button" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Locker / Daily Case"
+
 [node name="HostButton" type="Button" parent="CanvasLayer/MainMenu/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Host"
@@ -102,6 +106,114 @@ text = "Join"
 layout_mode = 2
 placeholder_text = "Room code  (blank = same PC)"
 alignment = 1
+
+[node name="Locker" type="PanelContainer" parent="CanvasLayer"]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -250.0
+offset_right = 230.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="M" type="MarginContainer" parent="CanvasLayer/Locker"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="V" type="VBoxContainer" parent="CanvasLayer/Locker/M"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+text = "LOCKER"
+horizontal_alignment = 1
+
+[node name="SkinRow" type="HBoxContainer" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/Locker/M/V/SkinRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Weapon Skin"
+
+[node name="Opt" type="OptionButton" parent="CanvasLayer/Locker/M/V/SkinRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="HeadRow" type="HBoxContainer" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/Locker/M/V/HeadRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Head"
+
+[node name="Opt" type="OptionButton" parent="CanvasLayer/Locker/M/V/HeadRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="FaceRow" type="HBoxContainer" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/Locker/M/V/FaceRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Face"
+
+[node name="Opt" type="OptionButton" parent="CanvasLayer/Locker/M/V/FaceRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="HairRow" type="HBoxContainer" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/Locker/M/V/HairRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Hair"
+
+[node name="Opt" type="OptionButton" parent="CanvasLayer/Locker/M/V/HairRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="BackRow" type="HBoxContainer" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L" type="Label" parent="CanvasLayer/Locker/M/V/BackRow"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Back"
+
+[node name="Opt" type="OptionButton" parent="CanvasLayer/Locker/M/V/BackRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="CaseButton" type="Button" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+text = "Open Daily Case"
+
+[node name="Result" type="RichTextLabel" parent="CanvasLayer/Locker/M/V"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+
+[node name="CloseButton" type="Button" parent="CanvasLayer/Locker/M/V"]
+layout_mode = 2
+text = "Close"
 
 [node name="HUD" type="Control" parent="CanvasLayer"]
 visible = false
