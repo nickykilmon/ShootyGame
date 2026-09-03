@@ -22,6 +22,7 @@ extends Node
 @onready var case_btn: Button = $CanvasLayer/Locker/M/V/CaseButton
 @onready var case_result: RichTextLabel = $CanvasLayer/Locker/M/V/Result
 @onready var locker_close: Button = $CanvasLayer/Locker/M/V/CloseButton
+@onready var status_label: Label = $CanvasLayer/Status
 
 
 const Player = preload("res://player.tscn")
@@ -45,6 +46,11 @@ var local_name := "Player"
 var local_skin := ""
 var local_cos := {"head": "", "face": "", "hair": "", "back": ""}
 var surf_selected := false
+
+# Connection state
+var _connecting := false
+var _connect_deadline := 0.0
+var _target := {}
 
 const CASE_COOLDOWN := 72000   # 20 hours (seconds)
 
@@ -79,6 +85,11 @@ func _ready():
 	chat_input.text_submitted.connect(_on_chat_submitted)
 	_render_leaderboard([])
 
+	status_label.hide()
+	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	multiplayer.connection_failed.connect(_on_connection_failed)
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
+
 	locker.hide()
 	locker_btn.pressed.connect(_open_locker)
 	locker_close.pressed.connect(func(): locker.hide())
@@ -100,7 +111,16 @@ func _ready():
 func _unhandled_input(_event):
 	pass
 
+func _process(_delta):
+	# Hard timeout: if we somehow never got connected_to_server or connection_failed.
+	if _connecting and Time.get_unix_time_from_system() > _connect_deadline:
+		_abort_connect("Couldn't reach the server. It may be asleep - wait a minute and try again.")
+
 func _input(event):
+	if _connecting and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		_abort_connect("Cancelled.")
+		get_viewport().set_input_as_handled()
+		return
 	if not hud.visible:
 		return
 	if chat_input.visible:
@@ -404,38 +424,83 @@ func _on_host_button_pressed():
 	print("Room code: %s   (host address %s:%d)" % [code, ip, PORT])
 
 func _on_join_button_pressed():
-	# Web build: connect to the shared dedicated server over WebSocket.
-	if OS.has_feature("web"):
-		_set_local_prefs()
-		main_menu.hide()
-		hud.show()
-		var wsp := WebSocketMultiplayerPeer.new()
-		var werr := wsp.create_client(WEB_SERVER_URL)
-		if werr != OK:
-			push_error("WebSocket connect failed: %d" % werr)
-		multiplayer.multiplayer_peer = wsp
+	if _connecting:
 		return
-
-	# Desktop: blank code -> a host on this same machine (quick local testing).
-	# Otherwise decode the room code.
-	var ip := "127.0.0.1"
-	var port := PORT
-	var raw := code_entry.text.strip_edges()
-	if raw != "":
-		var info := _decode_code(raw)
-		if info.is_empty():
-			code_entry.text = ""
-			code_entry.placeholder_text = "Invalid code - try again"
-			return
-		ip = info["ip"]
-		port = int(info["port"])
-
 	_set_local_prefs()
+
+	if OS.has_feature("web"):
+		_target = {"web": true}
+	else:
+		# Desktop: blank code -> localhost. Otherwise decode the room code.
+		var ip := "127.0.0.1"
+		var port := PORT
+		var raw := code_entry.text.strip_edges()
+		if raw != "":
+			var info := _decode_code(raw)
+			if info.is_empty():
+				code_entry.text = ""
+				code_entry.placeholder_text = "Invalid code - try again"
+				return
+			ip = info["ip"]
+			port = int(info["port"])
+		_target = {"web": false, "ip": ip, "port": port}
+
+	_connecting = true
+	_connect_deadline = Time.get_unix_time_from_system() + 100.0
+	_show_status("Connecting to the server...\n(the free server can take up to a minute to wake up - hang tight)")
+	_try_connect()
+
+func _try_connect() -> void:
+	if not _connecting:
+		return
+	var peer
+	if _target.get("web", false):
+		peer = WebSocketMultiplayerPeer.new()
+		peer.create_client(WEB_SERVER_URL)
+	else:
+		peer = ENetMultiplayerPeer.new()
+		peer.create_client(_target["ip"], int(_target["port"]))
+	multiplayer.multiplayer_peer = peer
+
+func _on_connected_to_server() -> void:
+	_connecting = false
+	_hide_status()
 	main_menu.hide()
 	hud.show()
 
-	enet_peer.create_client(ip, port)
-	multiplayer.multiplayer_peer = enet_peer
+func _on_connection_failed() -> void:
+	if not _connecting:
+		return
+	multiplayer.multiplayer_peer = null
+	if Time.get_unix_time_from_system() < _connect_deadline:
+		await get_tree().create_timer(3.0).timeout
+		_try_connect()
+	else:
+		_abort_connect("Couldn't reach the server. It may be asleep - wait a minute and try again.")
+
+func _on_server_disconnected() -> void:
+	multiplayer.multiplayer_peer = null
+	_connecting = false
+	hud.hide()
+	_show_status("Lost connection to the server.")
+	await get_tree().create_timer(2.5).timeout
+	_hide_status()
+	main_menu.show()
+
+func _abort_connect(msg: String) -> void:
+	_connecting = false
+	multiplayer.multiplayer_peer = null
+	_show_status(msg)
+	await get_tree().create_timer(3.0).timeout
+	_hide_status()
+	main_menu.show()
+
+func _show_status(msg: String) -> void:
+	status_label.text = msg
+	status_label.show()
+
+func _hide_status() -> void:
+	status_label.hide()
 
 func add_player(peer_id):
 	print("[add_player] spawning player for peer ", peer_id)
