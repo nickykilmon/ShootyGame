@@ -28,6 +28,13 @@ var player_name := "Player" : set = _set_player_name
 var surf_mode := false : set = _set_surf_mode
 var current_weapon_id := "pistol" : set = _set_current_weapon_id
 
+# Networked pose. The owner writes these every physics frame from its real
+# transform; everyone else smoothly interpolates toward them (the synchronizer
+# itself does not interpolate, which is what made other players look frozen/jumpy).
+var net_pos := Vector3.ZERO
+var net_yaw := 0.0
+var net_pitch := 0.0
+
 # --- Weapons ------------------------------------------------------------------
 # damage 1000 = instant kill. mag 0 = melee (no ammo / reload).
 const MELEE_RANGE := 2.5
@@ -161,6 +168,8 @@ func _enter_tree():
 
 func _ready():
 	add_to_group("players")
+	net_pos = global_position
+	net_yaw = rotation.y
 	_apply_color()
 	_build_weapon_model()
 	_set_surf_mode(surf_mode)
@@ -281,6 +290,21 @@ func _physics_process(delta):
 		anim_player.play("idle")
 
 	move_and_slide()
+
+	# Publish our pose for other peers to interpolate toward.
+	net_pos = global_position
+	net_yaw = rotation.y
+	net_pitch = camera.rotation.x
+
+# Other players: smoothly chase the last networked pose instead of snapping.
+func _process(delta):
+	if is_multiplayer_authority():
+		return
+	var t: float = clampf(delta * 18.0, 0.0, 1.0)
+	global_position = global_position.lerp(net_pos, t)
+	rotation.y = lerp_angle(rotation.y, net_yaw, t)
+	if camera:
+		camera.rotation.x = lerp_angle(camera.rotation.x, net_pitch, t)
 
 # --- Movement primitives ---------------------------------------------------
 

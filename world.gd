@@ -66,6 +66,9 @@ func _run_dedicated_server() -> void:
 		get_tree().quit(1)
 		return
 	multiplayer.multiplayer_peer = peer
+	multiplayer.server_relay = true   # relay sync/RPC packets between clients
+	multiplayer.peer_connected.connect(func(id): print("[server] peer connected: ", id))
+	multiplayer.peer_disconnected.connect(func(id): print("[server] peer disconnected: ", id))
 	multiplayer.peer_connected.connect(add_player)
 	multiplayer.peer_disconnected.connect(remove_player)
 	var wants_surf := OS.get_cmdline_user_args().has("--map=surf") \
@@ -140,6 +143,7 @@ func _on_join_button_pressed():
 	multiplayer.multiplayer_peer = enet_peer
 
 func add_player(peer_id):
+	print("[add_player] spawning player for peer ", peer_id)
 	var player = Player.instantiate()
 	player.name = str(peer_id)
 	var spawn_pos := get_spawn_point()
