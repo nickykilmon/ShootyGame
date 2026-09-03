@@ -214,17 +214,30 @@ func _unhandled_input(event):
 
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
+			KEY_ESCAPE:
+				if _menu_open:
+					_toggle_menu()
+				else:
+					Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			KEY_1: _set_slot("primary")
 			KEY_2: _set_slot("secondary")
 			KEY_3: _set_slot("knife")
 			KEY_R: _start_reload()
 			KEY_B: _toggle_menu()
 
+	# Click in the game to grab the mouse again (after tabbing away / pressing Esc).
+	if event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT \
+			and not _menu_open and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
+
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if current_weapon_id == "sniper" and not _menu_open:
 			_set_scoped(not _scoped)
 
-	if _menu_open:
+	# Ignore look / shoot input unless the mouse is actually captured.
+	if _menu_open or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		return
 
 	if event is InputEventMouseMotion:
@@ -278,7 +291,8 @@ func _physics_process(delta):
 	else:
 		_air_accelerate(wishdir, GROUND_SPEED, AIR_ACCEL, delta)
 
-	if _fire_queued or (not _menu_open and _current_weapon()["auto"] and Input.is_action_pressed("shoot")):
+	var can_shoot := not _menu_open and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	if _fire_queued or (can_shoot and _current_weapon()["auto"] and Input.is_action_pressed("shoot")):
 		_try_fire()
 	_fire_queued = false
 

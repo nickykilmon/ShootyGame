@@ -42,9 +42,10 @@ func _ready():
 		if host_btn:
 			host_btn.hide()
 
-func _unhandled_input(event):
-	if Input.is_action_just_pressed("quit"):
-		get_tree().quit()
+func _unhandled_input(_event):
+	# Esc is handled by the player now (releases the mouse). On desktop you can
+	# still quit with the window's close button / Alt+F4.
+	pass
 
 func _is_dedicated_server() -> bool:
 	return OS.has_feature("dedicated_server") \
