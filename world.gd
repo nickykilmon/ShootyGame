@@ -21,7 +21,7 @@ const _B32 := "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 # Browsers can't do UDP, so the web build talks WebSocket to a dedicated server.
 # >>> After you deploy the server (see the deploy guide), put its address here. <<<
-const WEB_SERVER_URL := "wss://CHANGE-ME.fly.dev"
+const WEB_SERVER_URL := "wss://fps-server-0tuv.onrender.com"
 
 var enet_peer = ENetMultiplayerPeer.new()
 
