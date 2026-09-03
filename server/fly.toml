@@ -1,0 +1,17 @@
+# Change ONLY the app name below to something unique, then run `fly deploy`
+# from this folder. Your server URL will be:  wss://<that name>.fly.dev
+
+app = "godot-fps-server-CHANGEME"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 9999
+  force_https = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

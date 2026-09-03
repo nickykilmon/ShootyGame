@@ -1,0 +1,12 @@
+# Render.com blueprint. In Render: New + -> Blueprint -> pick your GitHub repo.
+# Gives a free service at  wss://<name>.onrender.com
+# (Free services sleep after ~15 min idle; first join then waits ~1 min.)
+services:
+  - type: web
+    name: fps-server
+    runtime: docker
+    plan: free
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: .
+    # No healthCheckPath on purpose -> Render just checks the port is open (TCP),
+    # which a WebSocket-only server passes.
