@@ -1,0 +1,11 @@
+# Render blueprint. New + -> Blueprint -> pick this repo.
+# Free service at  wss://<name>.onrender.com  (sleeps ~15 min idle, ~1 min to wake).
+services:
+  - type: web
+    name: fps-server
+    runtime: docker
+    plan: free
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    # No healthCheckPath -> Render only checks the port is open (TCP), which the
+    # WebSocket server passes.
