@@ -34,8 +34,12 @@ const PORT = 9999
 const _B32 := "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 # Browsers can't do UDP, so the web build talks WebSocket to a dedicated server.
-# >>> After you deploy the server (see the deploy guide), put its address here. <<<
+# Fallback address, used only if the live lookup below fails.
 const WEB_SERVER_URL := "wss://fps-server-0tuv.onrender.com"
+
+# The web build fetches the CURRENT server address from this file at join time,
+# so you can change servers by editing one line + pushing (no re-export needed).
+const SERVER_CONFIG_URL := "https://raw.githubusercontent.com/nickykilmon/ShootyGame/main/server.txt"
 
 var enet_peer = ENetMultiplayerPeer.new()
 
@@ -429,7 +433,16 @@ func _on_join_button_pressed():
 	_set_local_prefs()
 
 	if OS.has_feature("web"):
-		_target = {"web": true}
+		_connecting = true
+		_connect_deadline = Time.get_unix_time_from_system() + 110.0
+		_show_status("Finding server...")
+		var url := await _fetch_server_url()
+		if not _connecting:
+			return
+		_target = {"web": true, "url": url}
+		_show_status("Connecting to the server...\n(the server can take up to a minute to wake up - hang tight)")
+		_try_connect()
+		return
 	else:
 		# Desktop: blank code -> localhost. Otherwise decode the room code.
 		var ip := "127.0.0.1"
@@ -456,11 +469,30 @@ func _try_connect() -> void:
 	var peer
 	if _target.get("web", false):
 		peer = WebSocketMultiplayerPeer.new()
-		peer.create_client(WEB_SERVER_URL)
+		peer.create_client(str(_target.get("url", WEB_SERVER_URL)))
 	else:
 		peer = ENetMultiplayerPeer.new()
 		peer.create_client(_target["ip"], int(_target["port"]))
 	multiplayer.multiplayer_peer = peer
+
+func _fetch_server_url() -> String:
+	var req := HTTPRequest.new()
+	req.timeout = 8.0
+	add_child(req)
+	if req.request(SERVER_CONFIG_URL) != OK:
+		req.queue_free()
+		return WEB_SERVER_URL
+	var res = await req.request_completed
+	req.queue_free()
+	# res = [result, response_code, headers, body]
+	if int(res[1]) == 200:
+		var txt := (res[3] as PackedByteArray).get_string_from_utf8().strip_edges()
+		# take the first non-empty, non-comment line
+		for line in txt.split("\n"):
+			line = line.strip_edges()
+			if line.begins_with("wss://") or line.begins_with("ws://"):
+				return line
+	return WEB_SERVER_URL
 
 func _on_connected_to_server() -> void:
 	_connecting = false

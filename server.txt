@@ -1,0 +1,6 @@
+wss://fps-server-0tuv.onrender.com
+# ^ The web build reads the first ws:// or wss:// line above.
+# When you run the PC server, cloudflared prints a URL like
+#   https://random-words.trycloudflare.com
+# Put it here as   wss://random-words.trycloudflare.com   (wss, not https),
+# then Commit + Push in GitHub Desktop. Players' games pick it up within ~1-2 min.
