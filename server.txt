@@ -1,4 +1,4 @@
-https://occupied-journals-increase-russia.trycloudflare.com
+wss://occupied-journals-increase-russia.trycloudflare.com
 # ^ The web build reads the first ws:// or wss:// line above.
 # When you run the PC server, cloudflared prints a URL like
 #   https://random-words.trycloudflare.com
