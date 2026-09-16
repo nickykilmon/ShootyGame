@@ -1,0 +1,3 @@
+@echo off
+title Starting server...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0play.ps1"
