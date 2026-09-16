@@ -1,4 +1,4 @@
-﻿wss://launches-encryption-holly-theft.trycloudflare.com
+﻿wss://conducted-models-trackbacks-peoples.trycloudflare.com
 # ^ The web build reads the first ws:// or wss:// line above.
 # When you run the PC server, cloudflared prints a URL like
 #   https://random-words.trycloudflare.com
