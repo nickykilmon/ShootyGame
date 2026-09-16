@@ -4,8 +4,6 @@
 #
 # Edit the two paths below if Godot or the project ever move.
 
-$ErrorActionPreference = "Stop"
-
 $Godot   = "C:\Users\nrkil\Downloads\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe"
 $Project = "C:\Users\nrkil\Downloads\MultiplayerFPSTutorial-main\MultiplayerFPSTutorial-main"
 
@@ -17,6 +15,16 @@ $GodotProcNames = @("Godot_v4.7.2-stable_win64_console", "Godot_v4.7.2-stable_wi
 $LogFile = Join-Path $env:TEMP "shootygame_tunnel_log.txt"
 
 function Say($msg, $color = "Cyan") { Write-Host $msg -ForegroundColor $color }
+
+# Whatever happens, never let this window vanish without showing why.
+trap {
+    Write-Host ""
+    Say "SOMETHING WENT WRONG:" "Red"
+    Say $_.Exception.Message "Red"
+    Say $_.InvocationInfo.PositionMessage "Red"
+    Read-Host "Press Enter to close"
+    exit 1
+}
 
 # ---- sanity checks ---------------------------------------------------------
 if (-not (Test-Path $Godot)) {
@@ -78,6 +86,16 @@ if (-not $publicUrl) {
 Say "Tunnel is up: $publicUrl" "Green"
 Start-Sleep -Seconds 2   # let Cloudflare finish propagating the quick tunnel
 
+# ---- confirm the game server actually started (not just the process launch) --
+Start-Sleep -Seconds 1
+if (-not (Get-Process -Name $GodotProcNames -ErrorAction SilentlyContinue)) {
+    Say "The Godot server process isn't running - it may have crashed on startup." "Red"
+    Say "Try running it directly to see the error:" "Yellow"
+    Say "  `"$Godot`" --headless --path `"$Project`" -- --server" "Yellow"
+    Read-Host "Press Enter to close"
+    exit 1
+}
+
 # ---- write server.txt --------------------------------------------------------
 Say "Updating server.txt..."
 Set-Location $Project
@@ -88,6 +106,10 @@ $lines[0] = $publicUrl
 Set-Content -Path "server.txt" -Value $lines -Encoding ascii
 
 # ---- commit + push -----------------------------------------------------------
+# NOTE: never merge a native command's stderr with 2>&1 here - PowerShell wraps
+# each stderr line (git prints plenty on a normal, successful push) as an error
+# record, which silently killed this whole script before. Let git print to the
+# console directly and just check the exit code.
 $gitOk = $true
 try { git --version | Out-Null } catch { $gitOk = $false }
 
@@ -97,10 +119,9 @@ if ($gitOk) {
     $staged = git diff --cached --name-only
     if ($staged) {
         git commit -m "auto: update server url" | Out-Null
-        $pushOutput = git push 2>&1
-        Write-Host $pushOutput
+        git push
         if ($LASTEXITCODE -ne 0) {
-            Say "Push failed. Open GitHub Desktop and click 'Push origin' manually." "Yellow"
+            Say "Push failed (exit code $LASTEXITCODE). Open GitHub Desktop and click 'Push origin' manually." "Yellow"
         } else {
             Say "Pushed." "Green"
         }
