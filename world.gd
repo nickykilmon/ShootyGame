@@ -486,10 +486,14 @@ func _fetch_server_url() -> String:
 	req.queue_free()
 	# res = [result, response_code, headers, body]
 	if int(res[1]) == 200:
-		var txt := (res[3] as PackedByteArray).get_string_from_utf8().strip_edges()
+		var bytes: PackedByteArray = res[3]
+		# strip a UTF-8 byte-order-mark if some editor/tool prepended one
+		if bytes.size() >= 3 and bytes[0] == 0xEF and bytes[1] == 0xBB and bytes[2] == 0xBF:
+			bytes = bytes.slice(3)
+		var txt := bytes.get_string_from_utf8().strip_edges()
 		# take the first non-empty, non-comment line
 		for line in txt.split("\n"):
-			line = line.strip_edges()
+			line = line.strip_edges().lstrip("﻿")
 			if line.begins_with("wss://") or line.begins_with("ws://"):
 				return line
 	return WEB_SERVER_URL

@@ -83,7 +83,9 @@ Say "Updating server.txt..."
 Set-Location $Project
 $lines = Get-Content "server.txt"
 $lines[0] = $publicUrl
-Set-Content -Path "server.txt" -Value $lines -Encoding utf8
+# ASCII, not utf8 -> Windows PowerShell's utf8 encoder adds a BOM, which would
+# make the game's "starts with wss://" check fail on the first line.
+Set-Content -Path "server.txt" -Value $lines -Encoding ascii
 
 # ---- commit + push -----------------------------------------------------------
 $gitOk = $true
